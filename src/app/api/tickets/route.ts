@@ -113,7 +113,8 @@ export async function GET(req: NextRequest) {
       serviceId ? { serviceId } : {},
       teamId ? { teamId } : {},
       assigneeId ? { assigneeId } : {},
-      mine ? { assigneeId: user.id } : {},
+      // «درخواست‌های من»: تیکت‌هایی که کاربر ثبت کرده یا به او تخصیص یافته است
+      mine ? { OR: [{ requesterId: user.id }, { assigneeId: user.id }] } : {},
       openOnly ? { status: { in: ["NEW", "IN_PROGRESS", "WAITING_REQUESTER", "WAITING_TEAM"] } } : {},
     ],
   };
