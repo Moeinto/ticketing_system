@@ -1,0 +1,179 @@
+// سامانه مدیریت درخواست و تیکتینگ سازمانی — Internal Ticketing System
+// Data model based on PRD v1.0 (section 9)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  // REQUESTER | AGENT | LEAD | ADMIN
+  role         String   @default("REQUESTER")
+  teamId       String?
+  team         Team?    @relation(fields: [teamId], references: [id])
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  ticketsRequested    Ticket[] @relation("TicketRequester")
+  ticketsAssigned     Ticket[] @relation("TicketAssignee")
+  comments            TicketComment[]
+  attachments         TicketAttachment[]
+  assignmentsDone     TicketAssignment[] @relation("AssignmentActor")
+  assignmentsReceived TicketAssignment[] @relation("AssignmentTarget")
+  events              TicketEvent[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Team {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  active      Boolean @default(true)
+
+  members     User[]
+  tickets     Ticket[]
+  assignments TicketAssignment[]
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  active      Boolean @default(true)
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id        String  @id @default(cuid())
+  number    Int     @unique
+  title     String
+  description String
+  // BUG | ACCESS | GUIDANCE | CHANGE
+  type      String
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+  // SINGLE_USER | TEAM | DEPARTMENT | ORGANIZATION
+  impact    String
+  // P1 | P2 | P3 | P4 — توسط کارشناس تعیین می‌شود (FR-06)
+  priority  String?
+  // NEW | IN_PROGRESS | WAITING_REQUESTER | WAITING_TEAM | RESOLVED | CLOSED
+  status    String  @default("NEW")
+
+  requesterId String
+  requester   User   @relation("TicketRequester", fields: [requesterId], references: [id])
+  assigneeId  String?
+  assignee    User?  @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  teamId      String?
+  team        Team?  @relation(fields: [teamId], references: [id])
+
+  reopenCount     Int       @default(0)
+  firstRespondedAt DateTime?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  bugDetail   TicketBugDetail?
+  comments    TicketComment[]
+  attachments TicketAttachment[]
+  assignments TicketAssignment[]
+  events      TicketEvent[]
+
+  @@index([status])
+  @@index([requesterId])
+  @@index([assigneeId])
+}
+
+model TicketBugDetail {
+  id             String  @id @default(cuid())
+  ticketId       String  @unique
+  ticket         Ticket  @relation(fields: [ticketId], references: [id])
+  // PRODUCTION | STAGING | DEVELOPMENT
+  environment    String
+  reproducible   Boolean @default(true)
+  steps          String
+  expected       String
+  actual         String
+  occurrenceTime String?
+  relatedRecord  String?
+}
+
+model TicketComment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  body       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model TicketAttachment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  uploaderId String
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+  fileName   String
+  storedName String
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model TicketAssignment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  assigneeId String?
+  assignee   User?    @relation("AssignmentTarget", fields: [assigneeId], references: [id])
+  teamId     String?
+  team       Team?    @relation(fields: [teamId], references: [id])
+  reason     String
+  byId       String
+  by         User     @relation("AssignmentActor", fields: [byId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model TicketEvent {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id])
+  actorId     String
+  actor       User     @relation(fields: [actorId], references: [id])
+  // CREATED | STATUS_CHANGE | PRIORITY_CHANGE | ASSIGNMENT | COMMENT | INTERNAL_NOTE | ATTACHMENT | RESOLVED | CLOSED | REOPENED
+  type        String
+  field       String?
+  oldValue    String?
+  newValue    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([ticketId])
+}
