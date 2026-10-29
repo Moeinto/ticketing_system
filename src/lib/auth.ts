@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import type { Role } from "@/lib/constants";
@@ -26,11 +26,20 @@ export async function createSession(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   await db.session.create({ data: { token, userId, expiresAt } });
+
+  // اگر درخواست از طریق HTTPS (مثلاً لینک preview پشت پروکسی) آمده باشد،
+  // کوکی باید SameSite=None و Secure باشد تا مرورگر آن را ذخیره و ارسال کند.
+  // در غیر این صورت در بستر iframe/پروکسی، مرورگر کوکی را پس نمی‌زند و همه
+  // درخواست‌های بعدی 401 می‌خورند («خطا در بارگذاری درخواست‌ها»).
+  const h = await headers();
+  const proto = (h.get("x-forwarded-proto") ?? "").split(",")[0].trim();
+  const isHttps = proto === "https";
+
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false,
+    sameSite: isHttps ? "none" : "lax",
+    secure: isHttps,
     path: "/",
     expires: expiresAt,
   });
