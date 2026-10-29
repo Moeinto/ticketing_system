@@ -33,6 +33,7 @@ export function TicketsView({
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [openCount, setOpenCount] = useState(0);
@@ -86,8 +87,18 @@ export function TicketsView({
         setTotal(data.total);
         setOpenCount(data.openCount);
         setNewCount(data.newCount);
+        setError(false);
         if (data.tickets.length === 0 && page > 1) setPage(1);
+      } else {
+        // خطای سرور یا احراز هویت — حالت خالی را با «یافت نشد» اشتباه نگیریم
+        setTickets([]);
+        setTotal(0);
+        setError(true);
       }
+    } catch {
+      setTickets([]);
+      setTotal(0);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -202,6 +213,23 @@ export function TicketsView({
             <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </div>
+      ) : error ? (
+        <Card>
+          <CardContent>
+            <EmptyState
+              title="خطا در بارگذاری درخواست‌ها"
+              subtitle="ارتباط با سرور برقرار نشد؛ احتمالاً نشست شما منقضی شده است."
+            />
+            <div className="flex justify-center gap-2 -mt-2">
+              <Button size="sm" onClick={() => load()}>
+                تلاش مجدد
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
+                بارگذاری مجدد صفحه
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : tickets.length === 0 ? (
         <Card>
           <CardContent>
