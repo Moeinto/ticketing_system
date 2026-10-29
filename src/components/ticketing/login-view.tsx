@@ -40,6 +40,10 @@ export function LoginView({ onLogin }: { onLogin: (me: Me) => void }) {
         setError(data.error ?? "ورود ناموفق بود");
         return;
       }
+      // ذخیره توکن نشست — پشتیبان کوکی برای بستر iframe/پروکسی
+      if (data.token) {
+        try { localStorage.setItem("its_session_token", data.token); } catch {}
+      }
       onLogin(data.user);
     } catch {
       setError("خطا در ارتباط با سرور");

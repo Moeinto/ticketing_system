@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
       return jsonError("ایمیل یا رمز عبور اشتباه است", 401);
     }
 
-    await createSession(user.id);
+    const token = await createSession(user.id);
     return Response.json({
       user: { id: user.id, name: user.name, email: user.email, role: user.role, teamId: user.teamId },
+      // توکن برای ذخیره در localStorage — پشتیبان کوکی در بستر iframe/پروکسی
+      token,
     });
   } catch {
     return jsonError("خطا در پردازش درخواست ورود", 500);

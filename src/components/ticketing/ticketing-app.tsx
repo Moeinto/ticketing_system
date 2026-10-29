@@ -67,10 +67,44 @@ export function TicketingApp() {
   }, []);
 
   useEffect(() => {
+    // پشتیبانی از توکن نشست در هدر — وقتی مرورگر در بستر iframe/پروکسی
+    // کوکی را ذخیره نمی‌کند، توکن از localStorage به همه درخواست‌های /api/
+    // اضافه می‌شود تا احراز هویت همیشه کار کند.
+    const origFetch = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      if (url.startsWith("/api/")) {
+        let token: string | null = null;
+        try { token = localStorage.getItem("its_session_token"); } catch {}
+        if (token) {
+          const headers: Record<string, string> = {};
+          const prev = init?.headers;
+          if (prev) {
+            if (typeof Headers !== "undefined" && prev instanceof Headers) {
+              prev.forEach((v, k) => { headers[k] = v; });
+            } else {
+              Object.assign(headers, prev as Record<string, string>);
+            }
+          }
+          headers["x-session-token"] = token;
+          init = { ...init, headers };
+        }
+      }
+      return origFetch(input, init);
+    };
+  }, []);
+
+  useEffect(() => {
     loadMe();
   }, [loadMe]);
 
   async function logout() {
+    try { localStorage.removeItem("its_session_token"); } catch {}
     await fetch("/api/auth/logout", { method: "POST" });
     setMe(null);
     setView("dashboard");

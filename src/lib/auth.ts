@@ -66,13 +66,29 @@ export type SessionUser = {
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const h = await headers();
+
+  // پشتیبانی از توکن در هدر (برای بستر iframe/پروکسی که کوکی بلاک می‌شود)
+  const authHeader = h.get("authorization") ?? "";
+  const headerToken = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : h.get("x-session-token") || "";
+
+  const cookieToken = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = cookieToken ?? (headerToken || undefined);
   if (!token) return null;
 
-  const session = await db.session.findUnique({
+  let session = await db.session.findUnique({
     where: { token },
     include: { user: { include: { team: true } } },
   });
+  // اگر نشست کوکی معتبر نبود ولی هدر توکن دارد، آن را امتحان کن
+  if (!session && headerToken && headerToken !== token) {
+    session = await db.session.findUnique({
+      where: { token: headerToken },
+      include: { user: { include: { team: true } } },
+    });
+  }
   if (!session) return null;
   if (session.expiresAt < new Date()) {
     await db.session.delete({ where: { id: session.id } }).catch(() => {});
