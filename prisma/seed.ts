@@ -52,12 +52,12 @@ async function main() {
     data: { name: "رضا شریفی", email: "user2@org.ir", passwordHash: hashPassword("user123"), role: "REQUESTER" },
   });
 
-  // ---------- سرویس‌ها ----------
-  const svcSales = await prisma.service.create({ data: { name: "سامانه فروش", description: "سامانه ثبت سفارش و فروش" } });
-  const svcPortal = await prisma.service.create({ data: { name: "پرتال مشتریان", description: "پرتال الکترونیک مشتریان" } });
-  const svcHR = await prisma.service.create({ data: { name: "سامانه منابع انسانی", description: "سامانه حضور و غیاب و مرخصی" } });
-  const svcNetwork = await prisma.service.create({ data: { name: "زیرساخت شبکه", description: "شبکه، VPN و ایمیل سازمانی" } });
-  const svcFinance = await prisma.service.create({ data: { name: "سامانه مالی", description: "سامانه حسابداری و خزانه" } });
+  // ---------- سامانه‌های سازمان ----------
+  const svcGRS = await prisma.service.create({ data: { name: "جی‌آراس", description: "سامانه جی‌آراس" } });
+  const svcOnliner = await prisma.service.create({ data: { name: "آنلاینر", description: "سامانه آنلاینر" } });
+  const svcEghamat = await prisma.service.create({ data: { name: "اقامت", description: "سامانه اقامت" } });
+  const svcCallcenter = await prisma.service.create({ data: { name: "کالسنتر", description: "سامانه کالسنتر" } });
+  const svcOther = await prisma.service.create({ data: { name: "سایر", description: "سایر سامانه‌ها و خدمات" } });
 
   const now = Date.now();
   const ago = (mins: number) => new Date(now - mins * 60 * 1000);
@@ -66,11 +66,11 @@ async function main() {
   const t1 = await prisma.ticket.create({
     data: {
       number: 1,
-      title: "خطا در ثبت سفارش در سامانه فروش",
+      title: "خطا در ثبت سفارش در آنلاینر",
       description:
-        "هنگام ثبت سفارش جدید در سامانه فروش، پس از زدن دکمه «ثبت نهایی» پیام خطای 500 نمایش داده می‌شود و سفارش ثبت نمی‌شود. این مشکل از امروز صبح برای چند کاربر پیش آمده و نیاز به بررسی فوری دارد.",
+        "هنگام ثبت سفارش جدید در آنلاینر، پس از زدن دکمه «ثبت نهایی» پیام خطای 500 نمایش داده می‌شود و سفارش ثبت نمی‌شود. این مشکل از امروز صبح برای چند کاربر پیش آمده و نیاز به بررسی فوری دارد.",
       type: "BUG",
-      serviceId: svcSales.id,
+      serviceId: svcOnliner.id,
       impact: "DEPARTMENT",
       priority: "P1",
       status: "IN_PROGRESS",
@@ -84,7 +84,7 @@ async function main() {
         create: {
           environment: "PRODUCTION",
           reproducible: true,
-          steps: "۱. ورود به سامانه فروش\n۲. ایجاد سفارش جدید\n۳. انتخاب مشتری و افزودن کالا\n۴. کلیک روی دکمه «ثبت نهایی»",
+          steps: "۱. ورود به آنلاینر\n۲. ایجاد سفارش جدید\n۳. انتخاب مشتری و افزودن کالا\n۴. کلیک روی دکمه «ثبت نهایی»",
           expected: "سفارش با موفقیت ثبت شود و شماره سفارش نمایش داده شود.",
           actual: "پیام خطای «Internal Server Error 500» نمایش داده شده و سفارش ثبت نمی‌شود.",
           occurrenceTime: "امروز ساعت ۸:۳۰ صبح",
@@ -126,11 +126,11 @@ async function main() {
   const t2 = await prisma.ticket.create({
     data: {
       number: 2,
-      title: "درخواست دسترسی به گزارش‌های سامانه مالی",
+      title: "درخواست دسترسی به گزارش‌های جی‌آراس",
       description:
-        "برای انجام پروژه تسویه پایان ماه، به گزارش «تراز حساب‌ها» و «گردش چک» در سامانه مالی نیاز دارم. لطفاً سطح دسترسی کاربر من را ارتقا دهید. تأییدیه سرپرست واحد مالی نیز دریافت شده است.",
+        "برای انجام پروژه تسویه پایان ماه، به گزارش «تراز حساب‌ها» و «گردش چک» در جی‌آراس نیاز دارم. لطفاً سطح دسترسی کاربر من را ارتقا دهید. تأییدیه سرپرست واحد نیز دریافت شده است.",
       type: "ACCESS",
-      serviceId: svcFinance.id,
+      serviceId: svcGRS.id,
       impact: "SINGLE_USER",
       priority: "P3",
       status: "WAITING_REQUESTER",
@@ -161,11 +161,11 @@ async function main() {
   const t3 = await prisma.ticket.create({
     data: {
       number: 3,
-      title: "کندی پرتال مشتریان در ساعات اوج",
+      title: "کندی سامانه کالسنتر در ساعات اوج",
       description:
-        "پرتال مشتریان بین ساعت ۱۰ تا ۱۲ ظهر به‌شدت کند می‌شود و بارگذاری صفحات تا ۱۵ ثانیه طول می‌کشد. چند مشتری در این باره تماس گرفتند و نیاز است علت بررسی شود.",
+        "سامانه کالسنتر بین ساعت ۱۰ تا ۱۲ ظهر به‌شدت کند می‌شود و بارگذاری صفحات تا ۱۵ ثانیه طول می‌کشد. چند مشتری در این باره تماس گرفتند و نیاز است علت بررسی شود.",
       type: "BUG",
-      serviceId: svcPortal.id,
+      serviceId: svcCallcenter.id,
       impact: "ORGANIZATION",
       priority: "P2",
       status: "WAITING_TEAM",
@@ -207,11 +207,11 @@ async function main() {
   const t4 = await prisma.ticket.create({
     data: {
       number: 4,
-      title: "راهنمای ثبت مرخصی در سامانه منابع انسانی",
+      title: "راهنمای ثبت درخواست اقامت در سامانه اقامت",
       description:
-        "در سامانه منابع انسانی گزینه «مرخصی ساعتی» را پیدا نمی‌کنم. لطفاً راهنمایی کنید چگونه مرخصی ساعتی ثبت کنم و آیا نیاز به تأیید سرپرست دارد؟",
+        "در سامانه اقامت گزینه «ثبت درخواست اقامت» را پیدا نمی‌کنم. لطفاً راهنمایی کنید چگونه درخواست اقامت ثبت کنم و آیا نیاز به تأیید سرپرست دارد؟",
       type: "GUIDANCE",
-      serviceId: svcHR.id,
+      serviceId: svcEghamat.id,
       impact: "SINGLE_USER",
       priority: "P4",
       status: "RESOLVED",
@@ -252,7 +252,7 @@ async function main() {
       description:
         "از دیشب اتصال VPN در منزل وصل نمی‌شود و پیام «Authentication Failed» نمایش داده می‌شود. رمز عبور را نیز ریست کردم اما مشکل برطرف نشد. برای دورکاری فردا به اتصال پایدار نیاز دارم.",
       type: "BUG",
-      serviceId: svcNetwork.id,
+      serviceId: svcOther.id,
       impact: "TEAM",
       priority: "P2",
       status: "NEW",
@@ -282,7 +282,7 @@ async function main() {
       description:
         "در فرم ثبت مشتریان، فیلد کد پستی اختیاری است و باعث می‌شود سوپاپ اکسترس بدون کد پستی ثبت شود. پیشنهاد می‌کنیم این فیلد برای مشتریان سازمانی اجباری شود یا اعتبارسنجی ۱۰ رقمی بودن اضافه گردد.",
       type: "CHANGE",
-      serviceId: svcSales.id,
+      serviceId: svcOnliner.id,
       impact: "DEPARTMENT",
       status: "NEW",
       requesterId: user2.id,
@@ -301,7 +301,7 @@ async function main() {
       description:
         "ایمیل‌های خروجی صندوق من در Outlook در صف مانده و ارسال نمی‌شود. ایمیل داخلی ارسال می‌شود اما ایمیل بیرونی با پیام «Delivery Delayed» برگشت می‌خورد.",
       type: "BUG",
-      serviceId: svcNetwork.id,
+      serviceId: svcOther.id,
       impact: "TEAM",
       priority: "P3",
       status: "CLOSED",
@@ -350,11 +350,11 @@ async function main() {
   const t8 = await prisma.ticket.create({
     data: {
       number: 8,
-      title: "خطا در نمایش نمودار داشبورد پرتال",
+      title: "خطا در نمایش نمودار داشبورد کالسنتر",
       description:
-        "نمودار «روند فروش ماهانه» در داشبورد پرتال مشتریان خالی نمایش داده می‌شود و فقط محورها دیده می‌شوند. در مرورگر Chrome و Firefox هر دو تست شد و مشکل دارد.",
+        "نمودار «روند تماس‌های ماهانه» در داشبورد کالسنتر خالی نمایش داده می‌شود و فقط محورها دیده می‌شوند. در مرورگر Chrome و Firefox هر دو تست شد و مشکل دارد.",
       type: "BUG",
-      serviceId: svcPortal.id,
+      serviceId: svcCallcenter.id,
       impact: "TEAM",
       priority: "P3",
       status: "IN_PROGRESS",
@@ -368,7 +368,7 @@ async function main() {
         create: {
           environment: "PRODUCTION",
           reproducible: true,
-          steps: "۱. ورود به پرتال مشتریان\n۲. رفتن به صفحه داشبورد\n۳. مشاهده نمودار روند فروش ماهانه",
+          steps: "۱. ورود به کالسنتر\n۲. رفتن به صفحه داشبورد\n۳. مشاهده نمودار روند تماس‌های ماهانه",
           expected: "نمودار با داده‌های ماه جاری نمایش داده شود.",
           actual: "نمودار خالی است و فقط محورها نمایش داده می‌شوند.",
           relatedRecord: "داشبورد پرتال > تب فروش",
